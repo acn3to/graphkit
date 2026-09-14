@@ -32,10 +32,10 @@ the target repo's root.
 
 It prints what it found and what it will add, waits for Enter (`--yes` skips), installs graphify
 if needed, writes `.graphifyignore` self-ignore rules (so graphify never indexes its own output or
-the skills/rules the kit is about to install) before building `graphify-out/` (code only; a
-reference size is 8549 nodes and 17394 edges in about 9 seconds on a TypeScript monorepo), plugs
-into the agent, ignores the graph output in `.gitignore`, and prints a pass/fail table.
-`--commit-graph` ignores only the HTML and cache so `graph.json` stays reviewable in PRs.
+the skills/rules the kit is about to install) before building `graphify-out/` (code only; build
+time scales with corpus size, roughly linear up to several thousand nodes), plugs into the agent,
+ignores the graph output in `.gitignore`, and prints a pass/fail table. `--commit-graph` ignores
+only the HTML and cache so `graph.json` stays reviewable in PRs.
 
 What each agent gets, all additive. The copilot and cursor nudges and the `.gitignore` rule
 are fenced with `graphkit:start` / `graphkit:end` markers; the claude-code plug is graphify's

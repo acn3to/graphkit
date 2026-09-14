@@ -1,0 +1,9 @@
+[project]
+name = "graphkit"
+version = "0.1.0"
+description = "Install, plug in, verify and measure graphify on Copilot, Cursor and Claude Code"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

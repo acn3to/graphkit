@@ -1,0 +1,4 @@
+Date,User,Kind,Model,Max Mode,Input (w/ Cache Write),Input (w/o Cache Write),Cache Read,Output Tokens,Total Tokens,Cost
+2026-09-13T14:02:11Z,user@example.com,Included,claude-sonnet-5,No,1200,900,45000,350,46550,0.05
+2026-09-13T14:09:40Z,user@example.com,Included,claude-sonnet-5,No,300,300,46000,120,46420,0.04
+"Sep 13, 2026, 2:15 PM",user@example.com,Included,gpt-5,No,,,,,,0.00

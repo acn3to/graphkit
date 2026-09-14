@@ -1,0 +1,14 @@
+---
+description: graphify code graph, query before reading files
+alwaysApply: true
+---
+<!-- graphkit:start -->
+This repo has a local code graph at `graphify-out/` built by graphify (AST only, no data leaves the machine).
+
+Before searching or opening files to answer a question about the codebase, run in the terminal:
+- `graphify query "<question>"` for a scoped subgraph
+- `graphify path "<A>" "<B>"` for how two symbols connect
+- `graphify explain "<symbol>"` for one symbol and its neighbours
+
+Open only the files the graph names. Search the codebase directly when the graph has oriented you and you need exact lines, or when `graphify-out/graph.json` is missing. After changing code, run `graphify update .`.
+<!-- graphkit:end -->

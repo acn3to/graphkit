@@ -15,7 +15,11 @@ def transcripts_for(project: Path, since: str | None) -> list[Path]:
     an error, not an empty measurement.
     """
     slug = re.sub(r"[^A-Za-z0-9]", "-", str(Path(project).resolve()))
-    d = Path(os.path.expanduser("~")) / ".claude" / "projects" / slug
+    # os.path.expanduser("~") ignores a patched HOME on native Windows (it resolves via
+    # USERPROFILE/other logic instead), so a test's monkeypatched HOME was silently dropped
+    # there. Read HOME directly first; Path.home() is the real fallback when it is unset.
+    home = Path(os.environ.get("HOME") or Path.home())
+    d = home / ".claude" / "projects" / slug
     if not d.is_dir():
         raise SystemExit(f"no transcripts at {d}")
     out = []

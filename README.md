@@ -4,10 +4,11 @@ Install, plug in, verify and measure [graphify](https://pypi.org/project/graphif
 already has GitHub Copilot, Cursor or Claude Code customizations. Additive, marked, undoable.
 
 graphify builds a local code graph (functions, files, calls, imports) with tree-sitter. No LLM, no
-key, nothing leaves the machine. An agent that queries the graph before opening files reads far
-fewer of them. graphify already ships a skill for many agents; what it does not do is verify the
-skill landed where your agent reads it, plug into instructions you already have without
-overwriting them, undo itself, or measure what it saved. That is this kit.
+key, nothing leaves the machine. An agent that orients itself with the smallest useful graph
+command before opening files can read fewer of them. graphify already ships a skill for many
+agents; what it does not do is verify the skill landed where your agent reads it, plug into
+instructions you already have without overwriting them, undo itself, or measure what it saved.
+That is this kit.
 
 ## Requirements
 
@@ -30,10 +31,11 @@ The examples below write `kit.py` for short; it is always `<path-to-graphkit>/ki
 the target repo's root.
 
 It prints what it found and what it will add, waits for Enter (`--yes` skips), installs graphify
-if needed, builds `graphify-out/` (code only; a reference size is 8549 nodes and 17394 edges in about 9 seconds
-on a TypeScript monorepo), plugs into the agent, ignores the graph output,
-and prints a pass/fail table. `--commit-graph` ignores only the HTML and cache so `graph.json`
-stays reviewable in PRs.
+if needed, writes `.graphifyignore` self-ignore rules (so graphify never indexes its own output or
+the skills/rules the kit is about to install) before building `graphify-out/` (code only; a
+reference size is 8549 nodes and 17394 edges in about 9 seconds on a TypeScript monorepo), plugs
+into the agent, ignores the graph output in `.gitignore`, and prints a pass/fail table.
+`--commit-graph` ignores only the HTML and cache so `graph.json` stays reviewable in PRs.
 
 What each agent gets, all additive. The copilot and cursor nudges and the `.gitignore` rule
 are fenced with `graphkit:start` / `graphkit:end` markers; the claude-code plug is graphify's
@@ -56,10 +58,11 @@ VS Code reads only at user level (`~/.copilot/skills/`). Project skills are read
     uv run --no-project kit.py uninstall --agent copilot [--purge]
 
 Verify checks: graphify on PATH, graph built, skill where the agent reads, nudge present, hubs
-returned by `graphify god-nodes`, a smoke `graphify query`, the ignore rule. Uninstall removes
-only what the kit added (marked blocks, stamped folders) and for Claude Code restores the files
-graphify's installer edited from a snapshot taken before install. A file you edited after install
-is left alone with a message.
+returned by `graphify god-nodes`, `graphify explain` on the top hub (resolving to a node id itself
+if the hub's label is ambiguous), the `.gitignore` rule, and the `.graphifyignore` self-ignore
+rule. Uninstall removes only what the kit added (marked blocks, stamped folders) and for Claude
+Code restores the files graphify's installer edited from a snapshot taken before install. A file
+you edited after install is left alone with a message.
 
 ## Measure
 
@@ -82,9 +85,23 @@ pattern; it was checked against the OTLP shape and a synthetic fixture. See `doc
 for the A/B, `docs/wsl-and-windows.md` for the WSL/Windows setup, `docs/presentation.md` for the
 deck order, and `templates/when-not-to-use.md` before installing on a small or docs-heavy repo.
 
+### What each check actually proves
+
+Three different things get called "it works," and they are not the same claim:
+
+- `install` / `verify` prove the graph built and the agent's guidance landed where that agent
+  reads it. That is setup health, not answer quality or token savings.
+- A CLI-only benchmark (running `graphify path`/`graphify explain` on a known question and
+  comparing its byte/token size against an equivalent grep) proves the graph's *raw output* is
+  smaller than reading files for that question. It says nothing about what a real agent session
+  does with that output available.
+- Real per-session token savings for an agent (Copilot, Cursor, Claude Code) require exporting
+  that agent's own usage logs for an A/B run and comparing them with `measure --ab`, as in
+  `docs/protocol.md`. Until that export and comparison has actually been run for an agent, do not
+  claim its token usage is proven either way. See `docs/copilot-measurement.md` for the exact
+  Chat Debug View steps for Copilot.
+
 ## Development
 
     uv run --with pytest pytest        # unit tests, real graphify on scratch repos
-    bash tests/e2e.sh [repo]           # install, verify, uninstall per agent on a clone
-
-Spec: `docs/spec.md`. Plan: `docs/plan.md`.
+    bash tests/e2e.sh <repo>           # install, verify, uninstall per agent on a clone

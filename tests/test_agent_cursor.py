@@ -30,6 +30,18 @@ def test_cursor_round_trip(tmp_path, capsys):
     assert not rule.exists()
     assert status(r) == "", status(r)
 
+def test_cursor_rule_places_path_before_query(tmp_path):
+    r = scratch(tmp_path)
+    cmd_install(r, "cursor", commit_graph=False, yes=True)
+    rule = (r / ".cursor" / "rules" / "graphify.mdc").read_text()
+    assert rule.index("graphify path") < rule.index("graphify query")
+
+def test_cursor_rule_mentions_truncated(tmp_path):
+    r = scratch(tmp_path)
+    cmd_install(r, "cursor", commit_graph=False, yes=True)
+    rule = (r / ".cursor" / "rules" / "graphify.mdc").read_text()
+    assert "[!] TRUNCATED" in rule
+
 def test_cursor_leaves_foreign_rule(tmp_path):
     r = scratch(tmp_path)
     foreign = r / ".cursor" / "rules" / "graphify.mdc"

@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime
 from pathlib import Path
@@ -40,6 +41,19 @@ def test_transcripts_for_maps_project_to_slug(tmp_path, monkeypatch):
     (d / "b.jsonl").write_text('{"type":"user","timestamp":"2026-09-13T00:00:00Z","message":{"content":"hi"}}\n')
     assert [p.name for p in transcripts_for(proj, since=None)] == ["a.jsonl", "b.jsonl"]
     assert [p.name for p in transcripts_for(proj, since="2026-09-10")] == ["b.jsonl"]
+
+
+def test_transcripts_for_honors_home_even_if_expanduser_ignores_it(tmp_path, monkeypatch):
+    """Native Windows: os.path.expanduser('~') can ignore a patched HOME (it resolves via
+    USERPROFILE/other logic instead), which silently dropped a test's HOME there. The reader
+    must read HOME directly and not depend on expanduser at all."""
+    home = tmp_path / "home"; monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setattr(os.path, "expanduser", lambda p: str(tmp_path / "wrong"))
+    proj = tmp_path / "work" / "my_repo"; proj.mkdir(parents=True)
+    slug = re.sub(r"[^A-Za-z0-9]", "-", str(proj.resolve()))
+    d = home / ".claude" / "projects" / slug; d.mkdir(parents=True)
+    (d / "a.jsonl").write_text('{"type":"user","timestamp":"2026-09-01T00:00:00Z","message":{"content":"hi"}}\n')
+    assert [p.name for p in transcripts_for(proj, since=None)] == ["a.jsonl"]
 
 
 def test_transcripts_for_missing_directory_exits(tmp_path, monkeypatch):

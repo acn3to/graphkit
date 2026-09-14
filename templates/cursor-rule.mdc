@@ -1,14 +1,15 @@
 ---
-description: graphify code graph, query before reading files
+description: graphify code graph, orient before reading files
 alwaysApply: true
 ---
 <!-- graphkit:start -->
 This repo has a local code graph at `graphify-out/` built by graphify (AST only, no data leaves the machine).
 
-Before searching or opening files to answer a question about the codebase, run in the terminal:
-- `graphify query "<question>"` for a scoped subgraph
+Before searching or opening files to answer a question about the codebase, run the smallest graph command that can orient you:
 - `graphify path "<A>" "<B>"` for how two symbols connect
 - `graphify explain "<symbol>"` for one symbol and its neighbours
+- `graphify affected "<symbol>" --depth 2` for the blast radius of a change
+- `graphify query "<question>"` only when you do not yet have a concrete symbol/file pair
 
-Open only the files the graph names. Search the codebase directly when the graph has oriented you and you need exact lines, or when `graphify-out/graph.json` is missing. After changing code, run `graphify update .`.
+If `graphify query` reports many nodes or `[!] TRUNCATED`, narrow the question or switch to `path`/`explain` instead of raising the budget blindly. Open only the files the graph names. Search the codebase directly when the graph has oriented you and you need exact lines, or when `graphify-out/graph.json` is missing. After changing code, run `graphify update .`.
 <!-- graphkit:end -->

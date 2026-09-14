@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 from graphkit.install import cmd_install, cmd_uninstall
 from graphkit.verify import cmd_verify
+from graphkit.agents import copilot as copilot_agent
 
 def scratch(tmp_path: Path, gitignore_text: str = "node_modules/\n") -> Path:
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
@@ -50,6 +51,31 @@ def test_uninstall_clean_when_gitignore_has_no_trailing_newline(tmp_path, capsys
     assert cmd_uninstall(r, "copilot", purge=True) == 0
     assert status(r) == "", status(r)
 
+
+def test_copilot_install_includes_graphkit_default_section(tmp_path):
+    r = scratch(tmp_path)
+    cmd_install(r, "copilot", commit_graph=False, yes=True)
+    skill = (r / ".github" / "skills" / "graphify" / "SKILL.md").read_text()
+    assert copilot_agent.GRAPHKIT_DEFAULT_HEADING in skill
+
+def test_copilot_installed_skill_drops_query_first_wording(tmp_path):
+    r = scratch(tmp_path)
+    cmd_install(r, "copilot", commit_graph=False, yes=True)
+    skill = (r / ".github" / "skills" / "graphify" / "SKILL.md").read_text()
+    assert "graphify query first" not in skill
+    assert "Run `graphify query" not in skill
+
+def test_copilot_instructions_place_path_before_query(tmp_path):
+    r = scratch(tmp_path)
+    cmd_install(r, "copilot", commit_graph=False, yes=True)
+    ins = (r / ".github" / "copilot-instructions.md").read_text()
+    assert ins.index("graphify path") < ins.index("graphify query")
+
+def test_copilot_instructions_mention_truncated(tmp_path):
+    r = scratch(tmp_path)
+    cmd_install(r, "copilot", commit_graph=False, yes=True)
+    ins = (r / ".github" / "copilot-instructions.md").read_text()
+    assert "[!] TRUNCATED" in ins
 
 def test_copilot_leaves_foreign_skill_folder(tmp_path):
     r = scratch(tmp_path)

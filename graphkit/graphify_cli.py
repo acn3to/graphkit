@@ -73,6 +73,9 @@ def god_nodes(repo: Path, top: int = 10) -> list[str]:
 def query(repo: Path, question: str, budget: int = 500) -> str:
     return _run(["query", question, "--budget", str(budget)], cwd=repo)
 
+def explain(repo: Path, node: str) -> str:
+    return _run(["explain", node], cwd=repo)
+
 def install_platform(repo: Path, platform: str) -> str:
     return _run(["install", "--project", "--platform", platform], cwd=repo)
 

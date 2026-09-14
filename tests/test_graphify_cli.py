@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 import pytest
-from graphkit.graphify_cli import version, build, god_nodes, query, node_count, install_platform, GraphifyError, _run
+from graphkit.graphify_cli import version, build, god_nodes, query, explain, node_count, install_platform, GraphifyError, _run
 
 def scratch(tmp_path: Path) -> Path:
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
@@ -21,6 +21,12 @@ def test_build_then_query(tmp_path):
     assert 1 <= len(hubs) <= 3 and any("main" in h for h in hubs)
     out = query(r, "what calls helper", budget=300)
     assert "helper" in out
+
+def test_explain_names_the_node(tmp_path):
+    r = scratch(tmp_path)
+    build(r)
+    out = explain(r, "main")
+    assert "main" in out
 
 def test_install_platform_copilot_writes_dot_copilot(tmp_path):
     r = scratch(tmp_path)

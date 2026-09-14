@@ -30,6 +30,14 @@ def test_cursor_round_trip(tmp_path, capsys):
     assert not rule.exists()
     assert status(r) == "", status(r)
 
+def test_cursor_rule_frontmatter_is_not_query_first(tmp_path):
+    r = scratch(tmp_path)
+    cmd_install(r, "cursor", commit_graph=False, yes=True)
+    rule = (r / ".cursor" / "rules" / "graphify.mdc").read_text()
+    frontmatter = rule.split("---")[1]
+    assert "query before reading files" not in frontmatter
+    assert "orient before reading files" in frontmatter
+
 def test_cursor_rule_places_path_before_query(tmp_path):
     r = scratch(tmp_path)
     cmd_install(r, "cursor", commit_graph=False, yes=True)

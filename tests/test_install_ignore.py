@@ -45,6 +45,28 @@ def test_graphifyignore_pre_existing_rule_is_not_duplicated(tmp_path):
     assert gi.read_text() == "graphify-out*/\n"
 
 
+def test_graphifyignore_preserves_unrelated_content_byte_for_byte(tmp_path):
+    """A .graphifyignore the repo already had, for its own reasons, keeps its own rules verbatim."""
+    gi = tmp_path / ".graphifyignore"
+    gi.write_text("*.generated\nvendor/\n")
+    assert ignore_graph_inputs(tmp_path) is True
+    text = gi.read_text()
+    assert text.startswith("*.generated\nvendor/\n")
+    assert all(line in text for line in SELF_IGNORE_RULES)
+    assert unignore_graph_inputs(tmp_path) is True
+    assert gi.read_text() == "*.generated\nvendor/\n"
+
+
+def test_graphifyignore_pre_existing_file_survives_uninstall_even_when_not_empty(tmp_path):
+    """GraphKit only deletes the file it created; a pre-existing one is the user's, block or not."""
+    gi = tmp_path / ".graphifyignore"
+    gi.write_text("vendor/\n")
+    ignore_graph_inputs(tmp_path)
+    unignore_graph_inputs(tmp_path)
+    assert gi.exists()
+    assert gi.read_text() == "vendor/\n"
+
+
 def test_pre_existing_empty_gitignore_survives(tmp_path):
     gi = tmp_path / ".gitignore"
     gi.write_text("")

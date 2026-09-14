@@ -77,6 +77,25 @@ def test_copilot_instructions_mention_truncated(tmp_path):
     ins = (r / ".github" / "copilot-instructions.md").read_text()
     assert "[!] TRUNCATED" in ins
 
+def test_copilot_instructions_are_smallest_command_first(tmp_path):
+    r = scratch(tmp_path)
+    cmd_install(r, "copilot", commit_graph=False, yes=True)
+    ins = (r / ".github" / "copilot-instructions.md").read_text()
+    assert "graphify path" in ins and "graphify explain" in ins and "graphify affected" in ins
+    assert "only when you do not yet have a concrete symbol/file pair" in ins
+    assert "query first" not in ins
+
+def test_copilot_skill_patch_is_idempotent_across_reinstall(tmp_path):
+    r = scratch(tmp_path)
+    cmd_install(r, "copilot", commit_graph=False, yes=True)
+    skill_path = r / ".github" / "skills" / "graphify" / "SKILL.md"
+    before = skill_path.read_text()
+    assert before.count(copilot_agent.GRAPHKIT_DEFAULT_HEADING) == 1
+    cmd_install(r, "copilot", commit_graph=False, yes=True)
+    after = skill_path.read_text()
+    assert after == before
+    assert after.count(copilot_agent.GRAPHKIT_DEFAULT_HEADING) == 1
+
 def test_copilot_leaves_foreign_skill_folder(tmp_path):
     r = scratch(tmp_path)
     skill = r / ".github" / "skills" / "graphify"

@@ -1,6 +1,6 @@
 """The only place graphkit shells out to graphify.
 
-Observed on this machine (graphify 0.9.59, 2026-09-13): running any read
+Observed with graphify 0.9.59 (2026-09-13): running any read
 command (e.g. `graphify god-nodes --top 3`) against a repo with no
 graphify-out/graph.json exits 1 and prints
 `error: graph file not found: <path>/graphify-out/graph.json` on stderr.
@@ -13,7 +13,7 @@ exists only on `cluster-only` and `export html`) and `update` never writes
 graphify-out/graph.html regardless of graph size, so there is nothing for
 `build` to skip on a large repo. Passing `--no-viz` to `update` is a hard
 CLI error (`error: unknown update option: --no-viz`), reproduced on a
-clone of a real TypeScript monorepo (8549 nodes) during e2e testing.
+clone of a real TypeScript monorepo during e2e testing.
 """
 from __future__ import annotations
 import json, re, shutil, subprocess, sys

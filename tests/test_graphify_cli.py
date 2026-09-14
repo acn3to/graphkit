@@ -32,7 +32,7 @@ def test_error_on_bad_graph(tmp_path):
         god_nodes(tmp_path, top=3)
 
 def test_build_never_sends_no_viz_to_update(tmp_path):
-    """e2e bug, found on a clone of a real TypeScript monorepo (8549 nodes):
+    """e2e bug, found on a clone of a real TypeScript monorepo:
     `graphify update` has no --no-viz flag (that flag exists only on cluster-only
     and export html) and fails with 'error: unknown update option: --no-viz'.
     build() must not offer a way to send it, and the flag must still be rejected

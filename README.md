@@ -30,8 +30,8 @@ The examples below write `kit.py` for short; it is always `<path-to-graphkit>/ki
 the target repo's root.
 
 It prints what it found and what it will add, waits for Enter (`--yes` skips), installs graphify
-if needed, builds `graphify-out/` (code only; a reference size is 8549 nodes and 17394 edges in about 9 seconds
-on a TypeScript monorepo), plugs into the agent, ignores the graph output,
+if needed, builds `graphify-out/` (code only; build time scales with corpus size, roughly linear
+up to several thousand nodes), plugs into the agent, ignores the graph output,
 and prints a pass/fail table. `--commit-graph` ignores only the HTML and cache so `graph.json`
 stays reviewable in PRs.
 

@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from graphkit import markers
-from graphkit.term import GREEN, RED, RESET, color_enabled
+from graphkit.term import GREEN, RED, RESET, color_enabled, safe
 from graphkit.graphify_cli import version, node_count, god_nodes, explain, graph_path, GraphifyError
 
 _MAX_DETAIL = 60
@@ -51,7 +51,7 @@ def render_human(checks: list[Check]) -> str:
     else:
         failed = ", ".join(c.name for c in checks if not c.ok)
         lines.append(f"\n{passed}/{total} passed — failed: {failed}")
-    return "\n".join(lines)
+    return safe("\n".join(lines))
 
 def _candidate_node_ids(repo: Path, label: str) -> list[str]:
     """Node ids sharing `label`, real source files sorted before tests/agent config folders."""

@@ -36,11 +36,18 @@ the clock, then repeat step 3 for arm B (e.g. `~/exports/arm-b.json`).
 
 ## 5. Measure each arm
 
+First run without `--json` and read the printed per-session breakdown before trusting the totals:
+a session outside the arm's window, or one you meant to exclude, shows up there by id, model and
+row count.
+
+    uv run --no-project kit.py measure --agent copilot --file ~/exports/arm-a.json --from 14:00 --to 14:20
+    uv run --no-project kit.py measure --agent copilot --file ~/exports/arm-b.json --from 14:35 --to 14:55
+
+Once the breakdown looks right, rerun with `--json` to write the files `--ab` reads (`--json`
+prints the summary object only, not the breakdown):
+
     uv run --no-project kit.py measure --agent copilot --file ~/exports/arm-a.json --from 14:00 --to 14:20 --json > A.json
     uv run --no-project kit.py measure --agent copilot --file ~/exports/arm-b.json --from 14:35 --to 14:55 --json > B.json
-
-Read the printed per-session breakdown before trusting the totals: a session outside the arm's
-window, or one you meant to exclude, shows up there by id, model and row count.
 
 ## 6. Compare
 

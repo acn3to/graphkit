@@ -1,107 +1,88 @@
 # graphkit
 
-Install, plug in, verify and measure [graphify](https://pypi.org/project/graphifyy/) on a repo that
-already has GitHub Copilot, Cursor or Claude Code customizations. Additive, marked, undoable.
+Install, verify, and measure [graphify](https://pypi.org/project/graphifyy/), a local,
+tree-sitter-based code graph, on a repo that already has GitHub Copilot, Cursor, or Claude Code
+customizations. Additive, marked, undoable. No LLM, no key, nothing leaves the machine.
 
-graphify builds a local code graph (functions, files, calls, imports) with tree-sitter. No LLM, no
-key, nothing leaves the machine. An agent that orients itself with the smallest useful graph
-command before opening files can read fewer of them. graphify already ships a skill for many
-agents; what it does not do is verify the skill landed where your agent reads it, plug into
-instructions you already have without overwriting them, undo itself, or measure what it saved.
-That is this kit.
+An agent that orients itself with the smallest useful graph command before opening files reads
+fewer of them. graphify already ships a skill for these agents; graphkit verifies it landed where
+the agent actually reads it, plugs into instructions you already have without overwriting them,
+undoes itself cleanly, and measures what it saved.
 
 ## Requirements
 
-- Python 3.11+ and [uv](https://docs.astral.sh/uv/). The kit installs graphify itself with
-  `uv tool install graphifyy==0.9.59` if it is missing.
-- The target repo is a git repo. The kit never touches its git state.
+- Python 3.11+ and [uv](https://docs.astral.sh/uv/). Installs graphify itself
+  (`uv tool install graphifyy==0.9.59`) if it's missing.
+- The target repo is a git repo; graphkit never touches its git state.
 
-## Install into a repo
+## Install
 
     cd <your repo>
-    uv run --no-project <path-to-graphkit>/kit.py install --agent copilot      # or cursor, claude-code
+    uv run --no-project <path-to-graphkit>/kit.py install --agent copilot   # or cursor, claude-code
 
-`--no-project` matters: without it, `uv run` first syncs the project it finds in the current
-directory, so running the kit from inside a repo that has a `pyproject.toml` creates a `.venv/`
-there and fails outright if that repo has a dependency uv cannot resolve. The kit itself needs
-nothing installed. `python3 <path-to-graphkit>/kit.py ...` is the equivalent fallback: `kit.py`
-and everything it imports are stdlib only.
-
-The examples below write `kit.py` for short; it is always `<path-to-graphkit>/kit.py`, run from
-the target repo's root.
-
-It prints what it found and what it will add, waits for Enter (`--yes` skips), installs graphify
-if needed, writes `.graphifyignore` self-ignore rules (so graphify never indexes its own output or
-the skills/rules the kit is about to install) before building `graphify-out/` (code only; build
-time scales with corpus size, roughly linear up to several thousand nodes), plugs into the agent,
-ignores the graph output in `.gitignore`, and prints a pass/fail table. `--commit-graph` ignores
-only the HTML and cache so `graph.json` stays reviewable in PRs.
-
-What each agent gets, all additive. The copilot and cursor nudges and the `.gitignore` rule
-are fenced with `graphkit:start` / `graphkit:end` markers; the claude-code plug is graphify's
-own edit of `CLAUDE.md` and `.claude/settings.json`, unfenced, undone from the before/after
-snapshot the kit stamps instead. Added folders carry a `.graphkit` stamp.
+Use `--no-project` (or `python3 kit.py ...`, stdlib only) so `uv` doesn't sync the target repo's
+own `pyproject.toml` first. This prints a plan, waits for Enter (`--yes` skips), builds
+`graphify-out/graph.json`, plugs into the agent, writes the `.gitignore` and `.graphifyignore`
+rules, and prints a pass/fail table.
 
 | agent | skill | always-on nudge |
 |---|---|---|
-| copilot | `.github/skills/graphify/` (graphify's skill, moved to where VS Code reads project skills) | a section appended to `.github/copilot-instructions.md` |
-| cursor | `.cursor/rules/graphify.mdc`, always applied | same file |
-| claude-code | `.claude/skills/graphify/` via graphify's installer; the installer leaves `.claude/settings.json.graphify-bak` which the kit removes if unchanged, otherwise reports it was kept | a section in `CLAUDE.md` plus PreToolUse hooks in `.claude/settings.json`; the diff is printed |
-
-Why Copilot needs the move: `graphify install --platform copilot` writes `.copilot/skills/`, which
-VS Code reads only at user level (`~/.copilot/skills/`). Project skills are read from
-`.github/skills/`, `.claude/skills/` and `.agents/skills/` (VS Code docs, checked 2026-09-13).
+| copilot | `.github/skills/graphify/` | `.github/copilot-instructions.md` |
+| cursor | `.cursor/rules/graphify.mdc` | same file |
+| claude-code | `.claude/skills/graphify/` (graphify's own installer, snapshotted for clean uninstall) | `CLAUDE.md` + `.claude/settings.json` hooks |
 
 ## Verify and undo
 
     uv run --no-project kit.py verify --agent copilot
     uv run --no-project kit.py uninstall --agent copilot [--purge]
 
-Verify checks: graphify on PATH, graph built, skill where the agent reads, nudge present, hubs
-returned by `graphify god-nodes`, `graphify explain` on the top hub (resolving to a node id itself
-if the hub's label is ambiguous), the `.gitignore` rule, and the `.graphifyignore` self-ignore
-rule. Uninstall removes only what the kit added (marked blocks, stamped folders) and for Claude
-Code restores the files graphify's installer edited from a snapshot taken before install. A file
-you edited after install is left alone with a message.
+Verify checks graphify is on PATH, the graph built, `graphify explain` answers on the top hub, the
+agent's guidance landed, and both ignore rules are in place. Uninstall removes only what the kit
+added; a file you edited after install is left alone with a message.
+
+## Any other agent
+
+graphkit only plugs into Copilot, Cursor, and Claude Code, but the graph itself works with any
+agent that can run a shell command. Install graphify if you don't have it
+(`uv tool install graphifyy==0.9.59`), build the graph once with `graphify . --no-viz`, then paste
+this into whatever that agent reads as instructions (system prompt, project rules file, or the
+first message of a session):
+
+```text
+This repo has a local code graph at graphify-out/graph.json, built by graphify from the AST.
+Nothing in it is sent to an LLM.
+
+Before opening files to answer a question about architecture, dependencies, or the blast radius
+of a change, orient with the smallest graph command that fits:
+
+- `graphify path "<A>" "<B>"` when two symbols or files are already known.
+- `graphify explain "<symbol-or-file>"` when one is central.
+- `graphify affected "<symbol-or-file>" --depth 2` for the blast radius of a change.
+- `graphify query "<question>" --budget 700` only when none of the above apply yet.
+
+If `graphify query` reports many nodes or `[!] TRUNCATED`, narrow the question or switch to
+`path`/`explain` instead of raising the budget. Open only the files the graph names, then read
+them normally for exact lines. If graphify-out/graph.json does not exist, skip all of this and
+read the codebase directly.
+
+After changing code, run `graphify update .` to keep the graph current.
+```
 
 ## Measure
 
-    uv run --no-project kit.py measure --agent claude-code --project <repo> [--since 2026-09-13] [--from 14:00 --to 14:20] [--exclude-session ID]... [--model sonnet]
+    uv run --no-project kit.py measure --agent claude-code --project <repo> --from 14:00 --to 14:20
     uv run --no-project kit.py measure --agent copilot --file export.json --from 14:00 --to 14:20
     uv run --no-project kit.py measure --agent cursor --file usage.csv --from 14:00 --to 14:20
-    uv run --no-project kit.py measure --agent copilot --file a.json --json > A.json   # then B.json
     uv run --no-project kit.py measure --ab A.json B.json
 
-| agent | source | per request | cache split | tool calls |
-|---|---|---|---|---|
-| claude-code | transcripts under `~/.claude/projects/<slug>/` | yes | yes | yes |
-| copilot | Chat Debug View export (`Developer: Show Chat Debug View`, download icon) or `github.copilot.chat.agentDebugLog.fileLogging.enabled` | yes | no | yes |
-| cursor | Settings, Usage, export CSV | yes | yes | no |
-
-The table ends with a per-session breakdown (id, models, rows, total), so a session that does not
-belong in the window shows up; `--exclude-session` and `--model` drop it, after the window, and the
-`--json` output and `--ab` table say which filters were applied. A field an agent does not report prints as `-`. The Copilot reader matches OTLP attribute keys by
-pattern; it was checked against the OTLP shape and a synthetic fixture. See `docs/protocol.md`
-for the A/B, `docs/wsl-and-windows.md` for the WSL/Windows setup, `docs/presentation.md` for the
-deck order, and `templates/when-not-to-use.md` before installing on a small or docs-heavy repo.
-
-### What each check actually proves
-
-Three different things get called "it works," and they are not the same claim:
-
-- `install` / `verify` prove the graph built and the agent's guidance landed where that agent
-  reads it. That is setup health, not answer quality or token savings.
-- A CLI-only benchmark (running `graphify path`/`graphify explain` on a known question and
-  comparing its byte/token size against an equivalent grep) proves the graph's *raw output* is
-  smaller than reading files for that question. It says nothing about what a real agent session
-  does with that output available.
-- Real per-session token savings for an agent (Copilot, Cursor, Claude Code) require exporting
-  that agent's own usage logs for an A/B run and comparing them with `measure --ab`, as in
-  `docs/protocol.md`. Until that export and comparison has actually been run for an agent, do not
-  claim its token usage is proven either way. See `docs/copilot-measurement.md` for the exact
-  Chat Debug View steps for Copilot.
+Claude Code reads its own transcripts directly; Copilot and Cursor need an export first
+(`docs/copilot-measurement.md`). Install and verify prove setup health, not token savings; see
+`docs/protocol.md` for how to run and read an A/B.
 
 ## Development
 
     uv run --with pytest pytest        # unit tests, real graphify on scratch repos
     bash tests/e2e.sh <repo>           # install, verify, uninstall per agent on a clone
+
+More: `docs/protocol.md` (the A/B method), `docs/wsl-and-windows.md`, `docs/copilot-measurement.md`,
+`docs/known-issues.md`, `templates/when-not-to-use.md`.

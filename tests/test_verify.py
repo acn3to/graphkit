@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 from graphkit.graphify_cli import build
-from graphkit.verify import common_checks
+from graphkit.verify import common_checks, render_human, Check
 
 def scratch_ambiguous_hub(tmp_path: Path) -> Path:
     """Two classes named `Ok`, in different files, each wired up enough to tie for top hub."""
@@ -51,3 +51,20 @@ def test_common_checks_passes_self_ignore_rule_once_written(tmp_path):
     checks = common_checks(tmp_path)
     ignore_check = next(c for c in checks if c.name == "graph self-ignore rule")
     assert ignore_check.ok is True
+
+def test_render_human_marks_pass_and_fail_and_summarizes():
+    out = render_human([Check("a", True, "fine"), Check("b", False, "broken")])
+    assert "✓ a" in out
+    assert "✗ b" in out
+    assert "1/2 passed — failed: b" in out
+
+def test_render_human_reports_all_passed():
+    out = render_human([Check("a", True, "fine"), Check("b", True, "also fine")])
+    assert "2/2 checks passed" in out
+
+def test_render_human_truncates_long_detail():
+    out = render_human([Check("explain answers", True, "x" * 200)])
+    lines = out.splitlines()
+    detail_line = next(l for l in lines if l.startswith(("✓", "✗")))
+    assert len(detail_line) < 200
+    assert detail_line.endswith("…")

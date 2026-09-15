@@ -5,7 +5,7 @@ from pathlib import Path
 from graphkit import __version__, markers
 from graphkit.detect import detect
 from graphkit.graphify_cli import ensure_installed, build, node_count, GraphifyError
-from graphkit.verify import common_checks, render, SELF_IGNORE_RULES
+from graphkit.verify import common_checks, render_human, SELF_IGNORE_RULES
 
 IGNORE_ALL = ("graphify-out/",)
 IGNORE_SOME = ("graphify-out/graph.html", "graphify-out/cache/")
@@ -99,7 +99,7 @@ def cmd_install(repo: Path, agent: str, commit_graph: bool = False, yes: bool = 
     print("  " + (".gitignore: appended" if ignore_graph(repo, commit_graph) else ".gitignore: already installed"))
     print("5. verify")
     checks = common_checks(repo, commit_graph) + mod.checks(repo)
-    print(render(checks))
+    print(render_human(checks))
     return 0 if all(c.ok for c in checks) else 1
 
 def cmd_uninstall(repo: Path, agent: str, purge: bool = False) -> int:

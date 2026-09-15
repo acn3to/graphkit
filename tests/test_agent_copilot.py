@@ -26,7 +26,7 @@ def test_install_verify_uninstall_clean(tmp_path, capsys):
     assert ins.startswith("# Team rules\nUse pt_BR in UI copy.\n") and "<!-- graphkit:start" in ins
     assert "graphify-out/" in (r / ".gitignore").read_text()
     assert not (r / ".copilot").exists()
-    assert cmd_verify(r, "copilot") == 0
+    assert cmd_verify(r, "copilot", markdown=True) == 0
     out = capsys.readouterr().out
     assert "| skill where the agent reads | pass |" in out
     assert cmd_uninstall(r, "copilot", purge=True) == 0
@@ -42,7 +42,7 @@ def test_install_is_idempotent(tmp_path, capsys):
 
 def test_verify_fails_on_untouched_repo(tmp_path, capsys):
     r = scratch(tmp_path)
-    assert cmd_verify(r, "copilot") == 1
+    assert cmd_verify(r, "copilot", markdown=True) == 1
     assert "| graph built | fail |" in capsys.readouterr().out
 
 def test_uninstall_clean_when_gitignore_has_no_trailing_newline(tmp_path, capsys):

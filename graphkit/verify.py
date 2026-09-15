@@ -1,10 +1,12 @@
 """The pass/fail table. The step graphify itself does not have."""
 from __future__ import annotations
-import json
+import json, os, sys
 from dataclasses import dataclass
 from pathlib import Path
 from graphkit import markers
 from graphkit.graphify_cli import version, node_count, god_nodes, explain, graph_path, GraphifyError
+
+_MAX_DETAIL = 60
 
 # The rules graphkit writes to .graphifyignore so graphify never indexes its own
 # output or the skills/rules the kit installed. Kept here so verify can confirm what
@@ -24,9 +26,31 @@ class Check:
     ok: bool
     detail: str = ""
 
-def render(checks: list[Check]) -> str:
+def render_markdown(checks: list[Check]) -> str:
     lines = ["| check | result | detail |", "|---|---|---|"]
     lines += [f"| {c.name} | {'pass' if c.ok else 'fail'} | {c.detail} |" for c in checks]
+    return "\n".join(lines)
+
+def _truncate(detail: str) -> str:
+    if len(detail) <= _MAX_DETAIL:
+        return detail
+    return detail[:_MAX_DETAIL - 1].rstrip() + "…"
+
+def render_human(checks: list[Check]) -> str:
+    color = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+    green, red, reset = ("\033[32m", "\033[31m", "\033[0m") if color else ("", "", "")
+    width = max((len(c.name) for c in checks), default=0)
+    lines = []
+    for c in checks:
+        mark = f"{green}✓{reset}" if c.ok else f"{red}✗{reset}"
+        lines.append(f"{mark} {c.name.ljust(width)}  {_truncate(c.detail)}")
+    passed = sum(1 for c in checks if c.ok)
+    total = len(checks)
+    if passed == total:
+        lines.append(f"\n{passed}/{total} checks passed")
+    else:
+        failed = ", ".join(c.name for c in checks if not c.ok)
+        lines.append(f"\n{passed}/{total} passed — failed: {failed}")
     return "\n".join(lines)
 
 def _candidate_node_ids(repo: Path, label: str) -> list[str]:
@@ -91,8 +115,8 @@ def common_checks(repo: Path, commit_graph: bool | None = None) -> list[Check]:
     out.append(_self_ignore_check(repo))
     return out
 
-def cmd_verify(repo: Path, agent: str) -> int:
+def cmd_verify(repo: Path, agent: str, markdown: bool = False) -> int:
     from graphkit.agents import MODULES
     checks = common_checks(repo) + MODULES[agent].checks(repo)
-    print(render(checks))
+    print(render_markdown(checks) if markdown else render_human(checks))
     return 0 if all(c.ok for c in checks) else 1

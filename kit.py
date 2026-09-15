@@ -33,6 +33,7 @@ def build_parser():
 
     v = sub.add_parser("verify", help="pass/fail table for one agent")
     common(v)
+    v.add_argument("--markdown", action="store_true", help="print the raw markdown table instead of the human-friendly view")
 
     u = sub.add_parser("uninstall", help="remove exactly what install added")
     common(u)
@@ -60,7 +61,7 @@ def main(argv=None):
         return cmd_install(Path(a.repo).resolve(), a.agent, commit_graph=a.commit_graph, yes=a.yes)
     if a.command == "verify":
         from graphkit.verify import cmd_verify
-        return cmd_verify(Path(a.repo).resolve(), a.agent)
+        return cmd_verify(Path(a.repo).resolve(), a.agent, markdown=a.markdown)
     if a.command == "uninstall":
         from graphkit.install import cmd_uninstall
         return cmd_uninstall(Path(a.repo).resolve(), a.agent, purge=a.purge)

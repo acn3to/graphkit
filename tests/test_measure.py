@@ -7,7 +7,7 @@ import pytest
 
 from graphkit import measure
 from graphkit.rows import Row
-from graphkit.measure import cmd_measure, in_window, summarize, ab_table, parse_when
+from graphkit.measure import cmd_measure, in_window, summarize, ab_table_markdown, parse_when
 
 KIT = Path(__file__).resolve().parents[1] / "kit.py"
 FIX = Path(__file__).parent / "fixtures"
@@ -30,7 +30,7 @@ def test_summarize_keeps_none_when_all_none():
 
 def test_ab_table_ratio_and_dash():
     a = summarize([row(1, 0, 1000, 5)]); b = summarize([row(1, 0, 400, None)])
-    out = ab_table(a, b)
+    out = ab_table_markdown(a, b)
     assert "| total tokens | 1000 | 400 | 0.40 |" in out
     assert "| tool calls | 5 | - | - |" in out
 
@@ -39,13 +39,13 @@ def test_cli_json_then_ab(tmp_path):
     r = subprocess.run([sys.executable, str(KIT), "measure", "--agent", "cursor", "--file", str(FIX / "cursor.csv"), "--json"], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     a.write_text(r.stdout); b.write_text(r.stdout)
-    r2 = subprocess.run([sys.executable, str(KIT), "measure", "--ab", str(a), str(b)], capture_output=True, text=True)
+    r2 = subprocess.run([sys.executable, str(KIT), "measure", "--ab", str(a), str(b), "--markdown"], capture_output=True, text=True)
     assert r2.returncode == 0 and "| B/A |" in r2.stdout and "| 1.00 |" in r2.stdout
 
 
 def args(**kw) -> Namespace:
     base = dict(agent=None, project=None, file=None, since=None, from_=None, to=None, ab=None, json=False,
-                exclude_session=None, model=None)
+                exclude_session=None, model=None, markdown=False)
     return Namespace(**{**base, **kw})
 
 

@@ -72,19 +72,50 @@ def summarize(rows: list[Row]) -> dict:
 def _fmt(v) -> str:
     return "-" if v is None else str(v)
 
-def table(rows: list[Row]) -> str:
+def table_markdown(rows: list[Row]) -> str:
     head = "| time | model | input | cache read | cache write | output | total | tools |\n|---|---|---|---|---|---|---|---|"
     body = [f"| {r.ts.strftime('%H:%M:%S') if r.ts else '-'} | {r.model or '-'} | {_fmt(r.input)} | {_fmt(r.cache_read)} | {_fmt(r.cache_write)} | {_fmt(r.output)} | {_fmt(r.total)} | {_fmt(r.tool_calls)} |" for r in rows]
     s = summarize(rows)
     foot = f"| **sum** ({s['requests']} requests) | | {_fmt(s['input'])} | {_fmt(s['cache_read'])} | {_fmt(s['cache_write'])} | {_fmt(s['output'])} | {_fmt(s['total'])} | {_fmt(s['tool_calls'])} |"
     return "\n".join([head, *body, foot])
 
-def ab_table(a: dict, b: dict) -> str:
+def _line(cells: list[str], widths: list[int], right: set[int]) -> str:
+    return "  ".join(c.rjust(w) if i in right else c.ljust(w) for i, (c, w) in enumerate(zip(cells, widths))).rstrip()
+
+def table_human(rows: list[Row]) -> str:
+    headers = ["time", "model", "input", "cache read", "cache write", "output", "total", "tools"]
+    right = {2, 3, 4, 5, 6, 7}
+    body = [[r.ts.strftime('%H:%M:%S') if r.ts else '-', r.model or '-',
+              _fmt(r.input), _fmt(r.cache_read), _fmt(r.cache_write), _fmt(r.output), _fmt(r.total), _fmt(r.tool_calls)]
+             for r in rows]
+    s = summarize(rows)
+    foot = [f"sum ({s['requests']} requests)", "",
+             _fmt(s['input']), _fmt(s['cache_read']), _fmt(s['cache_write']), _fmt(s['output']), _fmt(s['total']), _fmt(s['tool_calls'])]
+    widths = [max(len(headers[i]), *(len(r[i]) for r in body), len(foot[i])) for i in range(len(headers))]
+    lines = [_line(headers, widths, right)]
+    lines += [_line(r, widths, right) for r in body]
+    lines.append(_line(foot, widths, right))
+    return "\n".join(lines)
+
+def ab_table_markdown(a: dict, b: dict) -> str:
     lines = ["| | A | B | B/A |", "|---|---|---|---|"]
     for k in ("total", "requests", "tool_calls", "input", "cache_read", "cache_write", "output"):
         av, bv = a.get(k), b.get(k)
         ratio = f"{bv / av:.2f}" if (av not in (None, 0) and bv is not None) else "-"
         lines.append(f"| {LABELS[k]} | {_fmt(av)} | {_fmt(bv)} | {ratio} |")
+    return "\n".join(lines)
+
+def ab_table_human(a: dict, b: dict) -> str:
+    rows = []
+    for k in ("total", "requests", "tool_calls", "input", "cache_read", "cache_write", "output"):
+        av, bv = a.get(k), b.get(k)
+        ratio = f"{bv / av:.2f}" if (av not in (None, 0) and bv is not None) else "-"
+        rows.append([LABELS[k], _fmt(av), _fmt(bv), ratio])
+    headers = ["metric", "A", "B", "B/A"]
+    right = {1, 2, 3}
+    widths = [max(len(headers[i]), *(len(r[i]) for r in rows)) for i in range(len(headers))]
+    lines = [_line(headers, widths, right)]
+    lines += [_line(r, widths, right) for r in rows]
     return "\n".join(lines)
 
 def _read(args) -> list[Row]:
@@ -122,7 +153,7 @@ def cmd_measure(args) -> int:
         if a.get("agent") and b.get("agent") and a["agent"] != b["agent"]:
             print(f"warning: A was measured on {a['agent']} and B on {b['agent']}; "
                   "the arms are not comparable", file=sys.stderr)
-        print(ab_table(a["summary"], b["summary"]))
+        print(ab_table_markdown(a["summary"], b["summary"]) if args.markdown else ab_table_human(a["summary"], b["summary"]))
         print(f"A: {_filters_line(a)}")
         print(f"B: {_filters_line(b)}")
         return 0
@@ -141,7 +172,7 @@ def cmd_measure(args) -> int:
         print(json.dumps({"agent": args.agent, "filters": filters, "summary": summarize(rows),
                           "rows": [r.to_dict() for r in rows]}, indent=1))
     else:
-        print(table(rows))
+        print(table_markdown(rows) if args.markdown else table_human(rows))
         print()
         print(breakdown(rows))
     return 0

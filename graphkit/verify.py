@@ -1,9 +1,10 @@
 """The pass/fail table. The step graphify itself does not have."""
 from __future__ import annotations
-import json, os, sys
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from graphkit import markers
+from graphkit.term import GREEN, RED, RESET, color_enabled
 from graphkit.graphify_cli import version, node_count, god_nodes, explain, graph_path, GraphifyError
 
 _MAX_DETAIL = 60
@@ -37,8 +38,7 @@ def _truncate(detail: str) -> str:
     return detail[:_MAX_DETAIL - 1].rstrip() + "…"
 
 def render_human(checks: list[Check]) -> str:
-    color = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
-    green, red, reset = ("\033[32m", "\033[31m", "\033[0m") if color else ("", "", "")
+    green, red, reset = (GREEN, RED, RESET) if color_enabled() else ("", "", "")
     width = max((len(c.name) for c in checks), default=0)
     lines = []
     for c in checks:

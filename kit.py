@@ -51,6 +51,7 @@ def build_parser():
     m.add_argument("--model", help="keep only rows whose model contains NAME, case-insensitive; applied after the window")
     m.add_argument("--ab", nargs=2, metavar=("A_JSON", "B_JSON"), help="two measure --json outputs to compare")
     m.add_argument("--json", action="store_true")
+    m.add_argument("--markdown", action="store_true", help="print the raw markdown table instead of the human-friendly view")
     return p
 
 
